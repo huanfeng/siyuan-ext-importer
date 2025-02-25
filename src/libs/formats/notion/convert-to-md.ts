@@ -79,6 +79,7 @@ export async function readToMarkdown(info: NotionResolverInfo, file: ZipEntryFil
 	replaceElementsWithChildren(body, 'div.indented');
 	replaceElementsWithChildren(body, 'details');
 	fixToggleHeadings(body);
+	fixNormalToggle(body);
 	fixNotionLists(body, 'ul');
 	fixNotionLists(body, 'ol');
 
@@ -420,6 +421,22 @@ function fixToggleHeadings(body: HTMLElement) {
 				break;
 			}
 		}
+	}
+}
+
+/// 普通折叠块的处理和标题折叠块差不多, 需要替换为li, 但Notion导出时会在上一级有空的li, 也需要进行删除
+function fixNormalToggle(body: HTMLElement) {
+	const toggleHeadings = HTMLElementfindAll(body, 'summary');
+	for (const heading of toggleHeadings) {
+		let style = heading.getAttribute('style');
+		if (style) continue;
+
+		const parentLi = heading.closest('li');
+		if (parentLi) {
+			// 删除上一级的空li
+			parentLi.replaceWith(...parentLi.childNodes);
+		}
+		heading.replaceWith(createEl("li", { text: heading.textContent ?? '' }));
 	}
 }
 
